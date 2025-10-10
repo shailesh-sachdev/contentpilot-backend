@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services import ai_service
+from app.services.ai_service import generate_blog_with_image  # <-- This line is required!
+
 
 router = APIRouter()
 
