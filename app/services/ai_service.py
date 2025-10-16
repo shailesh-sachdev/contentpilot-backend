@@ -43,3 +43,24 @@ def generate_blog_with_image(prompt: str):
         image_url = generate_featured_image(featured_prompt)
         ai_json["featured_image_url"] = image_url
     return ai_json
+
+def generate_keyword_plan(prompt: str):
+    # Instruct the AI to generate keywords in an HTML table format, with monthly search volume
+    ai_prompt = (
+        "Act as an SEO expert. Based on the following business info, suggest the 20 best keywords to target. "
+        "For each keyword, show monthly search volume, difficulty, and a related keyword. "
+        "Return the result ONLY as an HTML table. DO NOT return any <html>, <body>, or <head> tags. "
+        "OPTIONAL: Include a <style> block above the table for table formatting."
+    ) + "\n\n" + prompt
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": ai_prompt}
+        ],
+        max_tokens=1200,
+        temperature=0.7
+    )
+    result = response.choices[0].message.content.strip()
+    # Return the HTML table (or render as safe HTML in the plugin)
+    return result

@@ -15,6 +15,9 @@ class ContentResponse(BaseModel):
 class BlogRequest(BaseModel):
     prompt: str
 
+class PromptRequest(BaseModel):
+    prompt: str
+
 
 @router.post("/generate", response_model=ContentResponse)
 def generate_blog(data: ContentRequest):
@@ -23,3 +26,9 @@ def generate_blog(data: ContentRequest):
 @router.post("/generate-blog")
 def generate_blog(request: BlogRequest):
     return generate_blog_with_image(request.prompt)
+
+@router.post("/keyword-plan")
+def keyword_plan(request: PromptRequest):
+    # Call your AI keyword research service here
+    from app.services.ai_service import generate_keyword_plan
+    return generate_keyword_plan(request.prompt)
