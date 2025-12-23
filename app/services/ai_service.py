@@ -45,7 +45,7 @@ def generate_detailed_blog(keyword: str, context: dict = None):
 
     # Attach the keyword for reference
     ai_json["keyword"] = keyword
-    return {"blog": ai_json}
+    return {"keyword": keyword, "blog": ai_json}
 import openai
 from app.config import OPENAI_API_KEY
 import json
