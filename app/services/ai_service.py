@@ -1,3 +1,49 @@
+def suggest_keywords_from_products_and_posts(products: list[str], posts: list[str]):
+    """
+    Given a list of product titles and posts, return a list of high-traffic keyword suggestions for ranking.
+    """
+    prompt = (
+        "You are an SEO expert. Given the following product titles and post titles, suggest a list of 20 high-traffic, low-competition keywords that can help these products and posts rank better. "
+        "Return the result as a JSON array of keywords, each with a short explanation of why it is relevant and its estimated monthly search volume. "
+        "Products: " + ", ".join(products) + ". Posts: " + ", ".join(posts)
+    )
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": prompt}
+        ],
+        max_tokens=800,
+        temperature=0.7
+    )
+    ai_text = response.choices[0].message.content.strip()
+    try:
+        keywords = json.loads(ai_text)
+    except Exception:
+        keywords = {"raw": ai_text}
+    return keywords
+
+def generate_detailed_blog(keyword: str, context: dict = None):
+    """
+    Given a keyword, generate a detailed blog post (at least 1000 words) with comprehensive information.
+    Optionally, include any context (such as previous blog data) for more detail.
+    """
+    base_prompt = (
+        f"Write a comprehensive, in-depth blog post of at least 1000 words about the keyword: '{keyword}'. "
+        "The blog should be highly informative, well-structured, and provide as much value as possible to the reader. "
+        "Include sections, examples, tips, and actionable advice. "
+    )
+    if context:
+        base_prompt += f"\n\nHere is some context or previous blog data to expand upon: {json.dumps(context)}"
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": base_prompt}
+        ],
+        max_tokens=2048,
+        temperature=0.7
+    )
+    blog_text = response.choices[0].message.content.strip()
+    return {"keyword": keyword, "blog": blog_text}
 import openai
 from app.config import OPENAI_API_KEY
 import json
