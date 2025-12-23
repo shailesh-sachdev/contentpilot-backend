@@ -24,7 +24,8 @@ def suggest_keywords_from_products_and_posts(products: list[str], posts: list[st
 
 def generate_detailed_blog(keyword: str, context: dict = None):
     """
-    Given a keyword, generate a detailed blog post (at least 1000 words) with comprehensive information.
+    Given a keyword, generate a detailed blog post (at least 1000 words) with comprehensive information,
+    including SEO title, meta description, and a featured image.
     Optionally, include any context (such as previous blog data) for more detail.
     """
     base_prompt = (
@@ -34,16 +35,17 @@ def generate_detailed_blog(keyword: str, context: dict = None):
     )
     if context:
         base_prompt += f"\n\nHere is some context or previous blog data to expand upon: {json.dumps(context)}"
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": base_prompt}
-        ],
-        max_tokens=2048,
-        temperature=0.7
-    )
-    blog_text = response.choices[0].message.content.strip()
-    return {"keyword": keyword, "blog": blog_text}
+
+    # Use the same metadata generation logic as generate_blog_with_image
+    ai_json = generate_blog_metadata(base_prompt)
+    featured_prompt = ai_json.get("featured_image_prompt", "")
+    if featured_prompt:
+        image_url = generate_featured_image(featured_prompt)
+        ai_json["featured_image_url"] = image_url
+
+    # Attach the keyword for reference
+    ai_json["keyword"] = keyword
+    return ai_json
 import openai
 from app.config import OPENAI_API_KEY
 import json
