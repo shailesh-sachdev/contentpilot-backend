@@ -4,7 +4,7 @@ def suggest_keywords_from_products_and_posts(products: list[str], posts: list[st
     """
     prompt = (
         "You are an SEO expert. Given the following product titles and post titles, suggest a list of 20 high-traffic, low-competition keywords that can help these products and posts rank better. "
-        "Return the result as a JSON array of keywords, each with a short explanation of why it is relevant and its estimated monthly search volume. "
+        "Return the result as a JSON array of objects, each with keys: 'keyword', 'explanation', and 'search_volume'. "
         "Products: " + ", ".join(products) + ". Posts: " + ", ".join(posts)
     )
     response = client.chat.completions.create(
@@ -16,6 +16,14 @@ def suggest_keywords_from_products_and_posts(products: list[str], posts: list[st
         temperature=0.7
     )
     ai_text = response.choices[0].message.content.strip()
+    # Remove code block markers if present
+    if ai_text.startswith("```json"):
+        ai_text = ai_text[7:]
+    if ai_text.startswith("```"):
+        ai_text = ai_text[3:]
+    if ai_text.endswith("```"):
+        ai_text = ai_text[:-3]
+    ai_text = ai_text.strip()
     try:
         keywords = json.loads(ai_text)
     except Exception:
