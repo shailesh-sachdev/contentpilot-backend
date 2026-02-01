@@ -2,12 +2,15 @@
 AI service for text and image generation.
 Text generation: Uses Ollama (self-hosted LLM)
 Image generation: Uses OpenAI DALL·E
+Fresh data: Integrates RSS feeds for current topics
 """
 import openai
 import json
 import logging
 from app.config import OPENAI_API_KEY
 from app.services import ollama_service
+from app.services import fresh_data_service
+from app.services.prompt_templates import PromptTemplates
 
 logger = logging.getLogger(__name__)
 
@@ -18,16 +21,10 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 def suggest_keywords_from_products_and_posts(products: list[str], posts: list[str]):
     """
     Given a list of product titles and posts, return a list of high-traffic keyword suggestions for ranking.
-    Uses Ollama for text generation.
+    Uses Ollama for text generation with SEO-optimized templates.
     """
     try:
-        prompt = (
-            "You are an SEO expert. Analyze these products and posts to suggest 10 high-traffic, low-competition keywords. "
-            "Products: " + ", ".join(products) + "\n"
-            "Posts: " + ", ".join(posts) + "\n\n"
-            "Return ONLY valid JSON array with format: [{\"keyword\": \"example keyword\", \"explanation\": \"why it ranks\", \"search_volume\": \"5000\", \"difficulty\": 30, \"intent\": \"commercial\"}]"
-        )
-        
+        prompt = PromptTemplates.keyword_suggestions(products, posts)
         keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=800)
         return keywords
     except Exception as e:
@@ -41,27 +38,39 @@ def generate_detailed_blog(keyword: str, context: dict = None):
     including SEO title, meta description, and a featured image.
     Optionally, include any context (such as previous blog data) for more detail.
     Uses Ollama for text generation and DALL-E for featured image.
+    Integrates fresh data pipeline for current topics.
     """
     try:
-        base_prompt = (
-            f"You are an expert SEO copywriter. Write a well-structured, SEO-optimized blog post about: '{keyword}'. \n\n"
-            f"STRUCTURE:\n"
-            f"1. Introduction (100-150 words): Hook, establish authority\n"
-            f"2. 3-4 main H2 sections (150-200 words each)\n"
-            f"3. Conclusion (100 words): Summary + CTA\n\n"
-            f"SEO REQUIREMENTS:\n"
-            f"- Naturally use the keyword in title, first paragraph, and headings\n"
-            f"- Include 2-3 long-tail keyword variations\n"
-            f"- Use short paragraphs (2-3 sentences)\n"
-            f"- Include bullet points and lists\n"
-            f"- 7th-grade reading level\n"
-            f"- Provide actionable insights\n"
-        )
+        # Step 1: Check if topic needs fresh data
+        needs_fresh = fresh_data_service.needs_fresh_data(keyword)
+        fresh_context = None
+        
+        if needs_fresh:
+            logger.info(f"Topic '{keyword}' requires fresh data - fetching RSS articles")
+            try:
+                articles = fresh_data_service.fetch_rss_articles(max_items=3)
+                if articles:
+                    fresh_context = fresh_data_service.build_fresh_context(articles, max_chars=1200)
+                    logger.info(f"Fresh context built: {len(fresh_context)} characters")
+                else:
+                    logger.warning("No articles fetched, proceeding without fresh data")
+            except Exception as e:
+                logger.error(f"Failed to fetch fresh data: {str(e)} - proceeding without it")
+        
+        # Step 2: Build optimized prompt with or without fresh data
+        if fresh_context:
+            base_prompt = PromptTemplates.blog_post_with_fresh_data(keyword, fresh_context)
+        else:
+            base_prompt = PromptTemplates.blog_post_evergreen(keyword)
+        
+        # Add user-provided context if available
         if context:
-            base_prompt += f"\n\nHere is some context or previous blog data to expand upon: {json.dumps(context)}"
+            base_prompt += f"\n\nAdditional context to consider: {json.dumps(context)}"
 
-        # Use the same metadata generation logic as generate_blog_with_image
+        # Step 3: Generate blog metadata using the optimized prompt
         ai_json = generate_blog_metadata(base_prompt)
+        
+        # Step 4: Generate featured image
         featured_prompt = ai_json.get("featured_image_prompt", "")
         if featured_prompt:
             try:
@@ -82,10 +91,11 @@ def generate_detailed_blog(keyword: str, context: dict = None):
 def generate_content(prompt: str):
     """
     Generate general content based on a prompt.
-    Uses Ollama for text generation.
+    Uses Ollama for text generation with SEO guidelines.
     """
     try:
-        content = ollama_service.generate_text(prompt, temperature=0.7, max_tokens=1024)
+        enhanced_prompt = PromptTemplates.general_content(prompt)
+        content = ollama_service.generate_text(enhanced_prompt, temperature=0.7, max_tokens=1024)
         return {"content": content}
     except Exception as e:
         logger.error(f"Error generating content: {str(e)}")
@@ -95,25 +105,15 @@ def generate_content(prompt: str):
 def generate_blog_metadata(prompt: str):
     """
     Generate SEO-optimized blog metadata (title, featured image prompt, meta description, content) from a prompt.
-    Uses Ollama for text generation with expert SEO guidelines. Returns JSON with keys: title, featured_image_prompt, meta_description, content.
+    Uses Ollama for text generation with expert SEO templates. Returns JSON with keys: title, featured_image_prompt, meta_description, content.
     """
     try:
-        system_prompt = (
-            "You are an expert SEO content strategist and WordPress optimization specialist. "
-            "Generate a RANK-WINNING blog post with optimal SEO metadata following these strict rules:\n\n"
-            "TITLE: 50-60 characters, includes primary keyword, compelling, click-worthy (CTR optimized)\n"
-            "META_DESCRIPTION: 150-160 characters, summarizes content value, includes keyword, includes CTA (e.g., 'Learn how...', 'Discover...')\n"
-            "FEATURED_IMAGE_PROMPT: Detailed DALL-E prompt (50+ words) for visually compelling, professional image matching content\n"
-            "CONTENT: 1200+ word SEO-optimized blog post with H2/H3 structure, keyword integration, and actionable insights\n\n"
-            "Respond ONLY as a valid JSON object with EXACTLY these keys: 'title', 'featured_image_prompt', 'meta_description', 'content'. "
-            "No markdown, no code blocks, just valid JSON."
-        )
-        
+        system_prompt = PromptTemplates.blog_metadata_system_prompt()
         ai_json = ollama_service.generate_json_response(
             prompt,
             system_prompt=system_prompt,
             temperature=0.6,
-            max_tokens=1200
+            max_tokens=1000
         )
         return ai_json
     except Exception as e:
@@ -159,9 +159,34 @@ def generate_blog_with_image(prompt: str):
     """
     Generate a complete blog with metadata and featured image.
     Uses Ollama for text and DALL-E for image.
+    Integrates fresh data pipeline for current topics.
     """
     try:
-        ai_json = generate_blog_metadata(prompt)
+        # Step 1: Extract topic from prompt for fresh data detection
+        # Simple heuristic: use the prompt as the topic
+        needs_fresh = fresh_data_service.needs_fresh_data(prompt)
+        fresh_context = None
+        
+        if needs_fresh:
+            logger.info(f"Prompt requires fresh data - fetching RSS articles")
+            try:
+                articles = fresh_data_service.fetch_rss_articles(max_items=3)
+                if articles:
+                    fresh_context = fresh_data_service.build_fresh_context(articles, max_chars=1200)
+                    logger.info(f"Fresh context built: {len(fresh_context)} characters")
+            except Exception as e:
+                logger.error(f"Failed to fetch fresh data: {str(e)} - proceeding without it")
+        
+        # Step 2: Build optimized prompt
+        if fresh_context:
+            optimized_prompt = PromptTemplates.blog_post_with_fresh_data(prompt, fresh_context)
+        else:
+            optimized_prompt = PromptTemplates.blog_post_evergreen(prompt)
+        
+        # Step 3: Generate blog metadata
+        ai_json = generate_blog_metadata(optimized_prompt)
+        
+        # Step 4: Generate featured image
         featured_prompt = ai_json.get("featured_image_prompt", "")
         if featured_prompt:
             try:
@@ -183,15 +208,16 @@ def generate_keyword_plan(prompt: str):
     """
     try:
         ai_prompt = (
-            "You are an SEO expert. Based on this business info, suggest the top 10 best keywords to target.\n\n"
-            "Return ONLY as a simple HTML table (no <html>/<body>/<head> tags) with columns:\n"
-            "- Keyword\n"
-            "- Search Volume\n"
-            "- Difficulty (1-100)\n"
-            "- Intent (Commercial/Informational/Transactional)\n"
-            "- Priority (1-5)\n\n"
-            "Make it clean and WordPress-ready.\n\n"
-            "Business: " + prompt
+            "You are an expert SEO strategist. Generate strategic keyword recommendations as an HTML table.\n\n"
+            "REQUIREMENTS:\n"
+            "- Create a simple HTML table (no <html>/<body>/<head> tags)\n"
+            "- Columns: Keyword | Search Volume | Difficulty | Intent | Priority\n"
+            "- 10 strategic recommendations\n"
+            "- Commercial/Informational/Transactional intent\n"
+            "- Priority scores 1-5\n"
+            "- Clean, WordPress-ready HTML\n\n"
+            f"BUSINESS CONTEXT: {prompt}\n\n"
+            "Generate the table now:"
         )
 
         result = ollama_service.generate_text(

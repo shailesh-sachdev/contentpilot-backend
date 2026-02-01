@@ -6,7 +6,8 @@ import logging
 import json
 from typing import Optional
 import requests
-from app.config import OLLAMA_BASE_URL, OLLAMA_MODEL
+from requests.auth import HTTPBasicAuth
+from app.config import OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_USERNAME, OLLAMA_PASSWORD
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,10 @@ def generate_text(
         
         logger.debug(f"Calling Ollama at {url} with model {OLLAMA_MODEL}")
         
-        response = requests.post(url, json=payload, timeout=OLLAMA_TIMEOUT)
+        # Use Basic Auth
+        auth = HTTPBasicAuth(OLLAMA_USERNAME, OLLAMA_PASSWORD) if OLLAMA_PASSWORD else None
+        
+        response = requests.post(url, json=payload, timeout=OLLAMA_TIMEOUT, auth=auth)
         response.raise_for_status()
         
         result = response.json()
