@@ -12,7 +12,7 @@ from app.config import OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_USERNAME, OLLAMA_PA
 logger = logging.getLogger(__name__)
 
 # Timeout for Ollama API calls (in seconds)
-OLLAMA_TIMEOUT = 300  # Increased to 5 minutes for remote server
+OLLAMA_TIMEOUT = 240  # 4 minutes - production timeout
 
 
 def convert_chat_messages_to_prompt(messages: list[dict]) -> str:
