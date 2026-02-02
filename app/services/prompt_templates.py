@@ -21,28 +21,9 @@ class PromptTemplates:
             Formatted prompt string
         """
         return (
-            "You are an expert SEO strategist specializing in high-ROI keyword research.\n\n"
-            "TASK: Analyze the following products and content to suggest 10 highly targeted keywords.\n\n"
-            "PRODUCTS TO ANALYZE:\n"
-            f"{', '.join(products)}\n\n"
-            "EXISTING POSTS:\n"
-            f"{', '.join(posts)}\n\n"
-            "KEYWORD CRITERIA:\n"
-            "• High commercial intent (business-focused)\n"
-            "• Low-to-medium keyword difficulty\n"
-            "• Aligned with products/services\n"
-            "• Realistic search volume (100+ monthly searches)\n"
-            "• Specific and actionable (avoid generic terms)\n\n"
-            "RESPONSE FORMAT:\n"
-            "Return ONLY a valid JSON array with exactly 10 objects. Each object must have:\n"
-            "{\n"
-            '  "keyword": "exact keyword phrase",\n'
-            '  "explanation": "why this ranks for your products",\n'
-            '  "search_volume": "estimated monthly searches",\n'
-            '  "difficulty": 25,\n'
-            '  "intent": "commercial|informational|navigational"\n'
-            "}\n\n"
-            "NO MARKDOWN, NO EXPLANATION TEXT. Return ONLY the JSON array."
+            f"Generate 10 SEO keywords for: {', '.join(products)}\n"
+            f"Existing posts: {', '.join(posts)}\n"
+            "JSON array only: [{\"keyword\": \"phrase\", \"difficulty\": 30, \"volume\": \"500\", \"intent\": \"commercial\"}]"
         )
     
     @staticmethod
@@ -58,15 +39,9 @@ class PromptTemplates:
             Formatted prompt string
         """
         return (
-            f"Write an SEO blog about: {topic}\n\n"
-            f"Use this data:\n{fresh_context}\n\n"
-            "Rules:\n"
-            "- Use ONLY facts above\n"
-            "- 3 H2 sections\n"
-            "- Include keyword naturally\n"
-            "- 500-600 words\n"
-            "- Short paragraphs\n\n"
-            "Write now:"
+            f"Write SEO blog about: {topic}\n"
+            f"Data:\n{fresh_context}\n"
+            "3 H2 sections, 500 words max, keyword natural, short paragraphs."
         )
     
     @staticmethod
@@ -81,14 +56,8 @@ class PromptTemplates:
             Formatted prompt string
         """
         return (
-            f"Write an SEO blog about: {topic}\n\n"
-            "Rules:\n"
-            "- 3 H2 sections\n"
-            "- Include keyword naturally\n"
-            "- 500-600 words\n"
-            "- Short paragraphs\n"
-            "- Timeless advice\n\n"
-            "Write now:"
+            f"Write SEO blog about: {topic}\n"
+            "3 H2 sections, 500 words max, keyword natural, timeless, short paragraphs."
         )
     
     @staticmethod
@@ -101,13 +70,11 @@ class PromptTemplates:
             System prompt string for Ollama
         """
         return (
-            "Generate SEO blog metadata as JSON.\n\n"
-            "Required fields:\n"
-            "- title: 50-60 chars, include keyword\n"
-            "- meta_description: 150-160 chars, include CTA\n"
-            "- featured_image_prompt: 50+ words for DALL-E\n"
-            "- content: 500-600 word blog with H2 headings\n\n"
-            "Return ONLY valid JSON. No markdown, no code blocks."
+            "Generate SEO blog JSON: title (50-60 chars), "
+            "meta_description (150-160 chars with CTA), "
+            "featured_image_prompt (50+ words), "
+            "content (500 words, H2 headings). "
+            "Valid JSON only."
         )
     
     @staticmethod

@@ -25,7 +25,7 @@ def suggest_keywords_from_products_and_posts(products: list[str], posts: list[st
     """
     try:
         prompt = PromptTemplates.keyword_suggestions(products, posts)
-        keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=800)
+        keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=600)
         return keywords
     except Exception as e:
         logger.error(f"Error generating keywords from products and posts: {str(e)}")
@@ -113,7 +113,7 @@ def generate_blog_metadata(prompt: str):
             prompt,
             system_prompt=system_prompt,
             temperature=0.6,
-            max_tokens=800
+            max_tokens=600
         )
         return ai_json
     except Exception as e:
@@ -208,22 +208,15 @@ def generate_keyword_plan(prompt: str):
     """
     try:
         ai_prompt = (
-            "You are an expert SEO strategist. Generate strategic keyword recommendations as an HTML table.\n\n"
-            "REQUIREMENTS:\n"
-            "- Create a simple HTML table (no <html>/<body>/<head> tags)\n"
-            "- Columns: Keyword | Search Volume | Difficulty | Intent | Priority\n"
-            "- 10 strategic recommendations\n"
-            "- Commercial/Informational/Transactional intent\n"
-            "- Priority scores 1-5\n"
-            "- Clean, WordPress-ready HTML\n\n"
-            f"BUSINESS CONTEXT: {prompt}\n\n"
-            "Generate the table now:"
+            f"Create a keyword plan HTML table for: {prompt}\n\n"
+            "Columns: Keyword | Volume | Difficulty | Intent | Priority\n"
+            "10 keywords total. HTML table only, no explanation.\n"
         )
 
         result = ollama_service.generate_text(
             ai_prompt,
             temperature=0.5,
-            max_tokens=800
+            max_tokens=600
         )
         
         return result
