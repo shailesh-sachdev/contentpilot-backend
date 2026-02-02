@@ -4,6 +4,7 @@ Handles all text generation requests via Ollama REST API.
 """
 import logging
 import json
+import threading
 from typing import Optional
 import requests
 from requests.auth import HTTPBasicAuth
@@ -13,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 # Timeout for Ollama API calls (in seconds)
 OLLAMA_TIMEOUT = 240  # 4 minutes - production timeout
+
+# Global lock to ensure only one concurrent Ollama request (CPU-only VPS)
+OLLAMA_LOCK = threading.Lock()
 
 
 def convert_chat_messages_to_prompt(messages: list[dict]) -> str:
@@ -85,7 +89,10 @@ def generate_text(
         # Use Basic Auth
         auth = HTTPBasicAuth(OLLAMA_USERNAME, OLLAMA_PASSWORD) if OLLAMA_PASSWORD else None
         
-        response = requests.post(url, json=payload, timeout=OLLAMA_TIMEOUT, auth=auth)
+        # Acquire lock to ensure only one Ollama request at a time (CPU-only VPS)
+        with OLLAMA_LOCK:
+            response = requests.post(url, json=payload, timeout=OLLAMA_TIMEOUT, auth=auth)
+        
         response.raise_for_status()
         
         result = response.json()
