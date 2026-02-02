@@ -48,9 +48,9 @@ def generate_detailed_blog(keyword: str, context: dict = None):
         if needs_fresh:
             logger.info(f"Topic '{keyword}' requires fresh data - fetching RSS articles")
             try:
-                articles = fresh_data_service.fetch_rss_articles(max_items=3)
+                articles = fresh_data_service.fetch_rss_articles(max_items=2)
                 if articles:
-                    fresh_context = fresh_data_service.build_fresh_context(articles, max_chars=1200)
+                    fresh_context = fresh_data_service.build_fresh_context(articles, max_chars=800)
                     logger.info(f"Fresh context built: {len(fresh_context)} characters")
                 else:
                     logger.warning("No articles fetched, proceeding without fresh data")
@@ -113,7 +113,7 @@ def generate_blog_metadata(prompt: str):
             prompt,
             system_prompt=system_prompt,
             temperature=0.6,
-            max_tokens=1000
+            max_tokens=800
         )
         return ai_json
     except Exception as e:
@@ -170,9 +170,9 @@ def generate_blog_with_image(prompt: str):
         if needs_fresh:
             logger.info(f"Prompt requires fresh data - fetching RSS articles")
             try:
-                articles = fresh_data_service.fetch_rss_articles(max_items=3)
+                articles = fresh_data_service.fetch_rss_articles(max_items=2)
                 if articles:
-                    fresh_context = fresh_data_service.build_fresh_context(articles, max_chars=1200)
+                    fresh_context = fresh_data_service.build_fresh_context(articles, max_chars=800)
                     logger.info(f"Fresh context built: {len(fresh_context)} characters")
             except Exception as e:
                 logger.error(f"Failed to fetch fresh data: {str(e)} - proceeding without it")

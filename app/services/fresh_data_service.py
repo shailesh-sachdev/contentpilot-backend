@@ -18,10 +18,10 @@ RSS_FEEDS = [
     "https://www.searchenginewatch.com/feed/"
 ]
 
-# Keywords that indicate need for fresh data
+# Keywords that indicate need for fresh data (conservative list)
 FRESH_DATA_KEYWORDS = [
-    "latest", "recent", "update", "updates", "trends", "this year",
-    "new", "comparison", "best", "2024", "2025", "2026",
+    "latest", "recent", "update", "updates", "trends",
+    "new", "2024", "2025", "2026",
     "current", "now", "today", "breaking", "news"
 ]
 
@@ -98,7 +98,7 @@ def fetch_rss_articles(max_items: int = 5) -> list[dict]:
     return all_articles
 
 
-def build_fresh_context(articles: list[dict], max_chars: int = 1500) -> str:
+def build_fresh_context(articles: list[dict], max_chars: int = 800) -> str:
     """
     Build a clean, readable context string from fetched articles.
     
@@ -120,8 +120,8 @@ def build_fresh_context(articles: list[dict], max_chars: int = 1500) -> str:
         summary = re.sub(r'\s+', ' ', summary).strip()
         
         # Truncate long summaries
-        if len(summary) > 150:
-            summary = summary[:147] + "..."
+        if len(summary) > 100:
+            summary = summary[:97] + "..."
         
         article_text = (
             f"\n{idx}. {article['title']}\n"
