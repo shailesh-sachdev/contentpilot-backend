@@ -25,7 +25,7 @@ def suggest_keywords_from_products_and_posts(products: list[str], posts: list[st
     """
     try:
         prompt = PromptTemplates.keyword_suggestions(products, posts)
-        keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=6000)
+        keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=600)
         return keywords
     except Exception as e:
         logger.error(f"Error generating keywords from products and posts: {str(e)}")
