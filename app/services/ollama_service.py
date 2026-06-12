@@ -81,7 +81,8 @@ def generate_text(
             "prompt": full_prompt,
             "stream": False,
             "temperature": temperature,
-            "num_predict": max_tokens
+            "num_predict": max_tokens,
+            "format": "json"
         }
         
         logger.debug(f"Calling Ollama at {url} with model {OLLAMA_MODEL}")
@@ -172,9 +173,13 @@ def generate_json_response(
     
     try:
         return json.loads(text_clean)
-    except (json.JSONDecodeError, ValueError):
-        logger.warning("Failed to parse JSON from Ollama response, returning as raw text")
-        return {"raw": generated_text}
+    except Exception:
+        logger.warning(
+            f"Failed JSON parse. Response: {generated_text[:1000]}"
+        )
+        raise Exception(
+            "Ollama did not return valid JSON"
+        )
 
 def enhance_image_prompt(basic_prompt: str) -> str:
     """

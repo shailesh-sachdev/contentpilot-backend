@@ -25,7 +25,7 @@ def suggest_keywords_from_products_and_posts(products: list[str], posts: list[st
     """
     try:
         prompt = PromptTemplates.keyword_suggestions(products, posts)
-        keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=600)
+        keywords = ollama_service.generate_json_response(prompt, temperature=0.5, max_tokens=6000)
         return keywords
     except Exception as e:
         logger.error(f"Error generating keywords from products and posts: {str(e)}")
@@ -74,7 +74,7 @@ def generate_detailed_blog(keyword: str, context: dict = None):
         featured_prompt = ai_json.get("featured_image_prompt", "")
         if featured_prompt:
             try:
-                image_url = generate_featured_image(featured_prompt)
+                # image_url = generate_featured_image(featured_prompt)
                 ai_json["featured_image_url"] = image_url
             except Exception as e:
                 logger.warning(f"Could not generate featured image for keyword '{keyword}': {str(e)}")
@@ -113,7 +113,7 @@ def generate_blog_metadata(prompt: str):
             prompt,
             system_prompt=system_prompt,
             temperature=0.6,
-            max_tokens=600
+            max_tokens=6000
         )
         return ai_json
     except Exception as e:
@@ -190,7 +190,7 @@ def generate_blog_with_image(prompt: str):
         featured_prompt = ai_json.get("featured_image_prompt", "")
         if featured_prompt:
             try:
-                image_url = generate_featured_image(featured_prompt)
+                # image_url = generate_featured_image(featured_prompt)
                 ai_json["featured_image_url"] = image_url
             except Exception as e:
                 logger.warning(f"Could not generate featured image: {str(e)}")
@@ -216,7 +216,7 @@ def generate_keyword_plan(prompt: str):
         result = ollama_service.generate_text(
             ai_prompt,
             temperature=0.5,
-            max_tokens=600
+            max_tokens=6000
         )
         
         return result
